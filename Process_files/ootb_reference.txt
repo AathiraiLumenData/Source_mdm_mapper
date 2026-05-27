@@ -1,0 +1,383 @@
+=== COMPLETE OOTB PERSON ENTITY REFERENCE ===
+Total: 177 fields across 20 field groups
+================================================================================
+
+ROOT (PERSON) FIELD GROUP:
+- First Name (firstName) [Text, 255]
+  Description: First name of the person.
+- Middle Name (middleName) [Text, 255]
+  Description: Middle name of the person.
+- Last Name (lastName) [Text, 255]
+  Description: Last name of the person.
+- Full Name (fullName) [Text, 255]
+  Description: Full name of the person.
+- Title (title) [Text, 255]
+  Description: Title associated with the person's name.
+- Birth Place (birthPlace) [Text, 255]
+  Description: Place of birth of the person.
+- Birth Date (birthDate) [Date Time]
+  Description: Date of birth of the person.
+- Gender (gender) [Lookup] → Gender
+  Description: Gender of the person.
+- Image (imageUrl) [Text, 255]
+  Description: URL of the image of the person.
+- Prefix Name (prefixName) [Lookup] → PrefixName
+  Description: Prefix for the name of the person. For example, Dr, Mr, or Mrs.
+- Suffix Name (suffixName) [Lookup] → SuffixName
+  Description: Suffix name of the person. For example, Sr, Jr, II, or III.
+- Designation (designation) [Text, 255]
+  Description: Designation or position of the person.
+- Marital Status (maritalStatus) [Lookup] → MaritalStatus
+  Description: Marital status of the person. For example, single, married, or divorced.
+  [13 fields in this group]
+
+ADDRESS FIELD GROUP:
+- Address Type (addressType) [Lookup] → AddressType
+  Description: Type of postal address. For example, home, office, shipping, or mailing.
+- Usage Type (usageType) [Lookup] → AddressUsageType
+  Description: Usage type. For example, business or personal.
+- Default Indicator (defaultIndicator) [Boolean]
+  Description: Indicates whether the postal address is primary or default.
+- Address Line 1 (addressLine1) [Text, 200]
+  Description: Line 1 of the address.
+- Address Line 2 (addressLine2) [Text, 200]
+  Description: Line 2 of the address.
+- Address Line 3 (addressLine3) [Text, 200]
+  Description: Line 3 of the address.
+- City (city) [Text, 50]
+  Description: City of postal address.
+- County (county) [Text, 50]
+  Description: County of postal address.
+- State (state) [Lookup] → State
+  Description: State of postal address.
+- Country (country) [Lookup] → Country
+  Description: Country of postal address.
+- Postal Code (postalCode) [Text, 10]
+  Description: Postal code of the address.
+- Postal Code Extension (postalCodeExtension) [Text, 10]
+  Description: Postal code extension of the address.
+- Coordinate System (coordinateSystem) [Text, 100]
+  Description: Coordinate system used to determine the location of the address.
+- Location Coordinate Desc (locationCoordinateDesc) [Text, 50]
+  Description: Location of the address using coordinate system.
+- Address Status (addressStatus) [Lookup] → AddressStatus
+  Description: Status of the address. For example, active, current, old address, or changed.
+- Latitude (latitude) [Text, 20]
+  Description: Latitude for the address.
+- Longitude (longitude) [Text]
+  Description: Longitude for the address.
+- Start Date (effectiveStartDate) [Date Time]
+  Description: Start date from when the address is active.
+- End Date (effectiveEndDate) [Date Time]
+  Description: Expiry date of the address.
+- Enriched Indicator (enrichedIndicator) [Lookup] → AddressEnrichedIndicator
+  Description: Validation status of the address. For example, error, valid, or not validated.
+- Verification Status Code (validationStatusCode) [Text, 255]
+  Description: Validation status code returned by the address verification service.
+- Verification Message (validationMessage) [Text, 255]
+  Description: Message from the address verification service describing validation outcome.
+- Elevation (elevation) [Text, 255]
+  Description: Elevation or altitude associated with the address location.
+  [23 fields in this group]
+
+ALTERNATE NAMES FIELD GROUP:
+- Alternate Name Type (alternateNameType) [Lookup] → AlternateNameType
+  Description: Type of the alternate name.
+- Alternate Name (AlternateName) [Text, 255]
+  Description: Alternate name of the person such as alias, previous name and maiden name.
+- Effective Start Date (effectiveStartDate) [Date Time]
+  Description: Start date from when the alternate name is valid.
+- Effective End Date (effectiveEndDate) [Date Time]
+  Description: Expiry date of the alternate name.
+  [4 fields in this group]
+
+CITIZENSHIP FIELD GROUP:
+- Citizen of Country (citizenOfCountry) [Lookup] → Country
+  Description: Country to which the person belongs.
+- Citizenship Status (citizenshipStatus) [Text, 255]
+  Description: Status of the citizenship.
+- Supporting Document Name (supportingDocumentName) [Text, 255]
+  Description: Name of the supporting document that proves the citizenship.
+- Effective Start Date (effectiveStartDate) [Date Time]
+  Description: Start date from when the citizenship is valid.
+- Effective End Date (effectiveEndDate) [Date Time]
+  Description: Expiry date of citizenship.
+  [5 fields in this group]
+
+DEMOGRAPHIC FIELD GROUP:
+- Demographic Type (demographicType) [Lookup] → DemographicType
+  Description: Type of demographic factors. For example, ethnicity, income level, age, and profession.
+- Demographic Value (demographicValue) [Lookup] → DemographicValue
+  Description: Demographic values for a demographic type. For example, if ethnicity is a demographic type, then Hispanic and Asian are demographic values.
+  [2 fields in this group]
+
+DOCUMENTS FIELD GROUP:
+- Document Type (documentType) [Lookup] → DocumentType
+  Description: Type of document.
+- Document Name (documentName) [Text, 255]
+  Description: Name of the document.
+- Document Link (documentLink) [Text, 255]
+  Description: URL to access the document.
+- File Name (fileName) [Text, 255]
+  Description: Name of the file.
+- Valid From (validFrom) [Date Time]
+  Description: Date from when the document is valid.
+- Valid To (validTo) [Date Time]
+  Description: Date until when the document is valid.
+  [6 fields in this group]
+
+EDUCATION FIELD GROUP:
+- Qualification Type (qualificationType) [Lookup] → QualificationType
+  Description: Type of qualification, such as illiterate, certification, diploma, bachelor, master, or doctoral.
+- Qualification Status (qualificationStatus) [Lookup] → QualificationStatus
+  Description: Status of the qualification.
+- Qualification Name (qualificationName) [Text, 255]
+  Description: Name of the qualification.
+- Institution Name (institutionName) [Text, 255]
+  Description: Name of the institution.
+- Student Number (studentNumber) [Text, 255]
+  Description: Student number in the institution.
+- Effective Start Date (effectiveStartDate) [Date Time]
+  Description: Start date of the qualification.
+- Effective End Date (effectiveEndDate) [Date Time]
+  Description: End date of the qualification.
+- Address Line 1 (addressLine1) [Text, 255]
+  Description: Line 1 of the address of the educational institution.
+- Address Line 2 (addressLine2) [Text, 255]
+  Description: Line 2 of the address of the educational institution.
+- City (city) [Text, 255]
+  Description: City in which the institution is located.
+- Postal Code (postalCode) [Text, 255]
+  Description: Postal code of the address.
+- Postal Code Extension (postalCodeExtension) [Text, 255]
+  Description: Postal code extension of the address.
+- State (state) [Lookup] → State
+  Description: State in which the institution is located.
+- Country (country) [Lookup] → Country
+  Description: Country in which the institution is located.
+  [14 fields in this group]
+
+EMAIL FIELD GROUP:
+- Usage Type (usageType) [Lookup] → ElectronicAddressUsageType
+  Description: Usage type indicates the intended use or purpose of the electronic address. For example, business, work, or personal.
+- Electronic Address (electronicAddress) [Text, 255]
+  Description: Electronic address of the person.
+- Default Indicator (defaultIndicator) [Boolean]
+  Description: Indicates whether the electronic address is primary or default.
+- Hygiene Status (hygieneStatus) [Text, 255]
+  Description: Hygiene status for the electronic address. For example, safe to send, invalid, or spam.
+- Electronic Address Status (electronicAddressStatus) [Lookup] → ElectronicAddressStatus
+  Description: Status of the email address. For example, active, blocked, or not in use.
+- Validation Status (validationStatusCode) [Text, 255]
+  Description: Validation status of the electronic address.
+- Validation Message (validateMessage) [Text, 255]
+  Description: Message that the address validation service generates to indicate how valid and trusted the address is.
+- Enriched Indicator (enrichedIndicator) [Boolean]
+  Description: Indicates whether the address verification service verified the address.
+- Effective Start Date (effectiveStartDate) [Date Time]
+  Description: Start date for the electronic address.
+- Effective End Date (effectiveEndDate) [Date Time]
+  Description: End date for the electronic address.
+- Net Protect Code (netProtectCode) [Text, 255]
+  Description: Net protect codes identify which service or appliance is monitoring a given network.
+  [11 fields in this group]
+
+EMPLOYMENT FIELD GROUP:
+- Employer Name (employerName) [Text, 255]
+  Description: Name of the employer.
+- Employment Type (employmentType) [Lookup] → EmploymentType
+  Description: Type of employment, such as permanent, contract, and part-time.
+- Employment Status (employmentStatus) [Lookup] → EmploymentStatus
+  Description: Status of employment, such as active, inactive, resigned, and terminated.
+- Designation (designation) [Text, 255]
+  Description: Designation of the person.
+- Line of Business (lineOfBusiness) [Text, 255]
+  Description: Line of business, such as retail or mortgage.
+- Effective Start Date (effectiveStartDate) [Date Time]
+  Description: Start date of employment.
+- Effective End Date (effectiveEndDate) [Date Time]
+  Description: End date of employment.
+- Location (location) [Text, 255]
+  Description: Location of the employer.
+  [8 fields in this group]
+
+FINANCIAL FIELD GROUP:
+- Finance Info Type (financeInfoType) [Lookup] → FinanceInfoType
+  Description: Type of financial information. For example, equity, annual income, and debt.
+- Amount (amount) [Double] → PersonStatusValue
+  Description: Total value of the finance.
+- Unit (unit) [Lookup] → FinancialUnit
+  Description: Unit of the amount. For example, thousands, millions, or billions.
+- Currency (currency) [Lookup] → Currency
+  Description: Currency in which the financial information is provided.
+- Time Period (timePeriod) [Text, 255]
+  Description: Finance period for which the data is collected.
+- Financial Reliability (financeReliability) [Lookup] → FinanceReliability
+  Description: Reliability of the financial data. For example, actual or estimate.
+- Time Period Type (timePeriodType) [Lookup] → TimePeriodType
+  Description: Type of the finance period. For example, quarterly or yearly.
+  [7 fields in this group]
+
+IDENTIFIER FIELD GROUP:
+- Alternate Identifier Type (alternateIdentifierType) [Lookup] → AlternateIdType
+  Description: Type of alternate identifier.
+- Alternate Identifier Value (alternateIdentifierValue) [Text, 255]
+  Description: Value of alternate identifier, such as driver's license number, or passport number.
+- Issuing Authority (issuingAuthority) [Lookup] → IssuingAuthority
+  Description: Authority that has issued the identifier to the person.
+- Status (identifierStatus) [Lookup] → IdentifierStatus
+  Description: Status of the alternate identifier. For example, effective, disqualified, expired, and temporary.
+- Effective Start Date (effectiveStartDate) [Date Time]
+  Description: Issued date of the identifier.
+- Effective End Date (effectiveEndDate) [Date Time]
+  Description: Expiry date of the identifier.
+  [6 fields in this group]
+
+INSURANCE FIELD GROUP:
+- Policy Number (policyNumber) [Text, 255]
+  Description: Policy number of the insurance.
+- Insurance Value (insuranceValue) [Double]
+  Description: Amount insured.
+- Unit (unit) [Lookup] → FinancialUnit
+  Description: Unit for the amount.
+- Currency (currency) [Lookup] → Currency
+  Description: Currency in which the person is insured.
+- Insurance Provider (insuranceProvider) [Text, 255]
+  Description: Company that provides the insurance.
+- Insurance Type (insuranceType) [Lookup] → InsuranceType
+  Description: Type of insurance, such as life, health and accident, professional indemnity, or medical malpractice.
+- Insurance Sub Type (insuranceSubType) [Lookup] → InsuranceSubType
+  Description: Insurance subtype. For example, if the insurance type is life, the subtypes might be non-participating, participating, indeterminate premium, economic, limited pay, or single premium.
+- Insurance Status (insuranceStatus) [Lookup] → InsuranceStatus
+  Description: Status of the insurance. For example, active or expired.
+- Insurance Holder (insuranceHolder) [Text, 255]
+  Description: Name of the insurance holder.
+- Effective Start Date (effectiveStartDate) [Date Time]
+  Description: Start date of the insurance.
+- Effective End Date (effectiveEndDate) [Date Time]
+  Description: Expiry date of the insurance.
+  [11 fields in this group]
+
+LIFESTYLE FIELD GROUP:
+- Lifestyle Type (lifestyleType) [Lookup] → LifestyleType
+  Description: Type of lifestyle, such as classical music listener, decision maker or movie maniac.
+- Lifestyle Value (lifestyleValue) [Text, 255]
+  Description: Value for a specified lifestyle.
+  [2 fields in this group]
+
+LOYALITY FIELD GROUP:
+- Account Type (accountType) [Lookup] → LoyaltyAccountType
+  Description: Type of loyalty accounts. For example, elite, silver, gold, or privileged.
+- Account Number (AccountNumber) [Text, 255]
+  Description: Loyalty account number.
+- Redemption Preferences (redemptionPreferences) [Lookup] → RedemptionPreferences
+  Description: Preference for the redemption of loyalty points. For example, cash back or credit.
+- Effective Start Date (effectiveStartDate) [Date Time]
+  Description: Start date of the loyalty account.
+- Effective End Date (effectiveEndDate) [Date Time]
+  Description: End date of the loyalty account.
+- Account Status (accountStatus) [Lookup] → LoyaltyAccountStatus
+  Description: Status of the account. For example, active, inactive, or dormant.
+  [6 fields in this group]
+
+PHONE FIELD GROUP:
+- Phone Type (phoneType) [Lookup] → PhoneType
+  Description: Type of phone. For example, landline, mobile, home, or business.
+- Phone Usage Type (phoneUsageType) [Lookup] → PhoneUsageType
+  Description: Usage type of the phone. For example, personal, business, and customer service.
+- Phone Number (phoneNumber) [Text, 255]
+  Description: Phone number of the person.
+- Phone Number Extension (phoneNumberExtension) [Text, 255]
+  Description: Extension to phone number.
+- Prefix Number (prefixNumber) [Text, 255]
+  Description: Country dialing code.
+- International Prefix (internationalPrefix) [Text, 255]
+  Description: Prefix used to select an international telephone circuit.
+- National Prefix (nationalPrefix) [Text, 255]
+  Description: Digit or combination of digits which must be dialed before an area or city code.
+- Cell Prefix (cellPrefix) [Text, 255]
+  Description: Prefix that must prepend the National Significant Number for inbound international calls.
+- Default Indicator (defaultIndicator) [Boolean]
+  Description: Indicates whether the phone number is the default number.
+- Do Not Call Indicator (doNotCallIndicator) [Boolean]
+  Description: Indicates whether the person is interested to receive unsolicited phone calls from marketers.
+- National Destination Code (nationalDestinationCode) [Text, 255]
+  Description: Code that identifies a numbering area within a country or a group of countries.
+- National Destination Code Indicator (nationalDestinationCodeIndicator) [Boolean]
+  Description: Indicates whether the phone number includes the National Destination Code.
+- Validation Status (validationStatusCode) [Text, 255]
+  Description: Validation status that the phone number validation service returns.
+- Enriched Indicator (enrichedIndicator) [Boolean]
+  Description: Indicates whether the phone number validation service verified the phone number.
+- Validation Message (validationMessage) [Text, 255]
+  Description: Validation message that the phone number validation service returns.
+- Effective Start Date (effectiveStartDate) [Date Time]
+  Description: Date from when the phone number is active.
+- Effective End Date (effectiveEndDate) [DateTime]
+  Description: Date until when the phone number was active or will be active.
+- Status (status) [Lookup] → PhoneStatus
+  Description: Status of the phone number, such as the phone number is publicly available or active.
+- National Format (nationalFormat) [Text, 50]
+  Description: National format for the phone number.
+- International Format (internationalFormat) [Text, 50]
+  Description: International format for the phone number.
+- ISO (iso) [Text, 2]
+  Description: ISO country code.
+  [21 fields in this group]
+
+SEGMENT FIELD GROUP:
+- Segment Type (segmentType) [Lookup] → SegmentType
+  Description: Segment type of the person. For example, income, age, location, or spending pattern.
+- Segment Value (segmentValue) [Lookup] → SegmentValue
+  Description: A segment type can have segment values. For example, if income is a segment type, then lower middle class, upper high class and upper middle class are segment values.
+  [2 fields in this group]
+
+SOCIAL MEDIA FIELD GROUP:
+- Social Media Type (socialHandleType) [Lookup] → SocialHandleType
+  Description: Type of social media platform, such as Facebook or Twitter.
+- Social Media Value (socialMediaValue) [Text, 255]
+  Description: Social media identifier or name of the person.
+  [2 fields in this group]
+
+SPECEALIZATIION FIELD GROUP:
+- Specialty Type (specialtyType) [Lookup] → SpecialityType
+  Description: Speciality type. For example, cytopathology, nephrology, or geriatrics.
+- Speciality (speciality) [Text, 255]
+  Description: Name of speciality.
+- Board Certification Flag (boardCertificationFlag) [Boolean]
+  Description: Indicates whether the board certification is active or not.
+  [3 fields in this group]
+
+STATUS FIELD GROUP:
+- Status Type (statusType) [Lookup] → PersonStatusType
+  Description: Status type of the person. For example, onboarding, legal, or credit.
+- Status Value (statusValue) [Lookup] → PersonStatusValue
+  Description: Status value of the person.
+  [2 fields in this group]
+
+TAX DETAILS FIELD GROUP:
+- Tax Number Type (taxNumberType) [Lookup] → TaxNumberType
+  Description: Type of the tax number. Tax number can be Individual Taxpayer Identification Number (ITIN), Employer Identification Number (EIN), Inland Revenue Department (IRD) number, and Permanent Account Number (PAN).
+- Tax Number (taxNumber) [Text Field, 255]
+  Description: Unique number that identifies the person for tax purposes.
+- Taxpayer Type (taxPayerType) [Lookup] → TaxPayerType
+  Description: Type of tax payer. For example, individual, company, partnership, or trust.
+- Currency (currency) [Lookup] → Currency
+  Description: Currency in which the tax is paid.
+- Country (country) [Lookup] → Country
+  Description: Country of taxation.
+- State (state) [Lookup] → State
+  Description: State within the country of the taxation.
+- Tax Authority (taxAuthority) [Lookup] → TaxAuthority
+  Description: Tax authority. For example, Internal Revenue Service (IRS), HM Revenue and Customs (HMRC), and Inland Revenue Department.
+- Effective Start Date (effectiveStartDate) [Date Time]
+  Description: Start date of the tax period.
+- Effective End Date (effectiveEndDate) [Date Time]
+  Description: End date of the tax period.
+- Tax Paid (taxPaid) [Text Field, 255]
+  Description: Tax amount that the person has paid.
+  [10 fields in this group]
+
+
+================================================================================
+END OF OOTB PERSON ENTITY REFERENCE

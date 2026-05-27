@@ -1,0 +1,17 @@
+# Secrets
+Process_files/.env
+
+# Generated outputs
+output/
+
+# Input data
+input file/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+Process_files/__pycache__/
+
+# macOS
+.DS_Store

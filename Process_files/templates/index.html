@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UNSW MDM Tools</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://viewer.diagrams.net/js/viewer-static.min.js"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    .drop-active { border-color:#3b82f6!important; background-color:#eff6ff!important; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+    .fade-in { animation:fadeIn 0.3s ease forwards; }
+    .step-connector { width:2px; height:20px; background:#e5e7eb; margin-left:17px; }
+    .step-connector.done { background:#86efac; }
+    #sidebar { width:340px; min-width:340px; }
+  </style>
+</head>
+<body class="bg-slate-100 h-screen flex flex-col overflow-hidden">
+
+  <!-- ── Header ─────────────────────────────────────────────────────────── -->
+  <header class="bg-white border-b border-slate-200 shadow-sm flex-shrink-0 z-20">
+    <div class="px-6 py-3 flex items-center gap-4">
+      <div class="w-9 h-9 rounded-lg flex items-center justify-center font-black text-base shadow-sm flex-shrink-0"
+           style="background:#FFD100;color:#003087;">U</div>
+      <div>
+        <h1 class="text-base font-bold text-slate-900 leading-tight">MDM Tools</h1>
+        <p class="text-xs text-slate-400">UNSW · Informatica MDM</p>
+      </div>
+
+      <!-- Tool switcher -->
+      <div class="flex gap-1 bg-slate-100 rounded-xl p-1 ml-6">
+        <button id="navMapping" onclick="switchTool('mapping')"
+                class="px-4 py-1.5 text-sm font-medium rounded-lg bg-white text-slate-800 shadow-sm transition-all">
+          MDM Mapping
+        </button>
+        <button id="navDiagram" onclick="switchTool('diagram')"
+                class="px-4 py-1.5 text-sm font-medium rounded-lg text-slate-500 hover:text-slate-700 transition-all">
+          Diagram Builder
+        </button>
+      </div>
+
+      <div class="ml-auto flex items-center gap-3">
+        <span id="headerStatus" class="hidden text-xs font-medium text-green-700 bg-green-50 border border-green-200 px-3 py-1 rounded-full">Mapping complete</span>
+        <span class="text-xs px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 font-medium border border-blue-100">claude-sonnet-4-6</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Body ───────────────────────────────────────────────────────────── -->
+  <div class="flex flex-1 overflow-hidden">
+
+    <!-- ════════════════════════════════════════════════════════════════════
+         TOOL 1 — MDM MAPPING
+    ════════════════════════════════════════════════════════════════════════ -->
+    <div id="toolMapping" class="flex flex-1 overflow-hidden">
+
+      <!-- Sidebar -->
+      <aside id="sidebar" class="bg-white border-r border-slate-200 flex flex-col overflow-y-auto flex-shrink-0">
+
+        <div class="p-5 border-b border-slate-100">
+          <h2 class="text-sm font-semibold text-slate-700 mb-3">Source System File</h2>
+
+          <div id="dropZone"
+               class="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center cursor-pointer transition-all hover:border-blue-400 hover:bg-blue-50/50 select-none">
+            <div class="w-10 h-10 mx-auto mb-2 rounded-xl bg-slate-100 flex items-center justify-center">
+              <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+              </svg>
+            </div>
+            <p class="text-sm font-medium text-slate-600">Drop <code class="bg-slate-100 rounded px-1 text-xs">datasystem.txt</code></p>
+            <p class="text-xs text-slate-400 mt-0.5">or <span class="text-blue-500 underline">click to browse</span></p>
+            <input id="fileInput" type="file" accept=".txt" class="hidden">
+          </div>
+
+          <div id="fileBadge" class="hidden mt-2 flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2 text-xs text-green-800">
+            <svg class="w-3.5 h-3.5 flex-shrink-0 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+            </svg>
+            <span id="fileLabel" class="font-medium truncate flex-1"></span>
+            <button onclick="clearFile()" class="text-green-600 hover:text-green-800 font-bold leading-none ml-1">×</button>
+          </div>
+
+          <details class="mt-3">
+            <summary class="text-xs text-slate-400 cursor-pointer hover:text-slate-600 select-none">Paste text instead</summary>
+            <textarea id="textInput" class="mt-2 w-full h-28 p-2 border border-slate-300 rounded-lg text-xs font-mono text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                      placeholder="Paste datasystem.txt content…"></textarea>
+          </details>
+
+          <button onclick="loadDemo()"
+                  class="mt-4 w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium py-2 px-4 rounded-xl transition-colors text-sm border border-slate-200">
+            Load Demo Data
+          </button>
+
+          <button id="generateBtn" onclick="startGeneration()"
+                  class="mt-2 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-xl transition-colors flex items-center justify-center gap-2 text-sm shadow-sm">
+            <svg id="btnIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+            <span id="btnText">Generate MDM Mapping</span>
+          </button>
+        </div>
+
+        <!-- Pipeline progress -->
+        <div id="progressSection" class="hidden p-5 border-b border-slate-100">
+          <h2 class="text-sm font-semibold text-slate-700 mb-4">Pipeline</h2>
+          <div class="space-y-0">
+            <div class="flex items-start gap-3">
+              <div class="flex flex-col items-center">
+                <div id="s1icon" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0 transition-all"><span class="text-slate-400 font-bold text-xs">1</span></div>
+                <div id="s1connector" class="step-connector"></div>
+              </div>
+              <div class="pb-4 flex-1">
+                <p class="font-medium text-slate-800 text-sm mt-1">AI Mapping</p>
+                <p id="s1msg" class="text-xs text-slate-400 mt-0.5 leading-relaxed">Waiting…</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <div class="flex flex-col items-center">
+                <div id="s2icon" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0 transition-all"><span class="text-slate-400 font-bold text-xs">2</span></div>
+                <div id="s2connector" class="step-connector"></div>
+              </div>
+              <div class="pb-4 flex-1">
+                <p class="font-medium text-slate-800 text-sm mt-1">Convert to CSV</p>
+                <p id="s2msg" class="text-xs text-slate-400 mt-0.5">Waiting…</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <div class="flex flex-col items-center">
+                <div id="s3icon" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0 transition-all"><span class="text-slate-400 font-bold text-xs">3</span></div>
+              </div>
+              <div class="flex-1">
+                <p class="font-medium text-slate-800 text-sm mt-1">Generate Diagram</p>
+                <p id="s3msg" class="text-xs text-slate-400 mt-0.5">Waiting…</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Downloads -->
+        <div id="downloadSection" class="hidden p-5 space-y-2">
+          <h2 class="text-sm font-semibold text-slate-700 mb-3">Downloads</h2>
+          <a href="/download/csv" class="flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 px-4 py-2.5 rounded-xl font-medium text-sm transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Download CSV
+          </a>
+          <a href="/download/drawio" class="flex items-center gap-2 bg-violet-50 hover:bg-violet-100 text-violet-800 border border-violet-200 px-4 py-2.5 rounded-xl font-medium text-sm transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Download Draw.io
+          </a>
+          <a href="/download/md" class="flex items-center gap-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 px-4 py-2.5 rounded-xl font-medium text-sm transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Download Markdown
+          </a>
+        </div>
+
+      </aside>
+
+      <!-- Main panel -->
+      <main class="flex-1 flex flex-col overflow-hidden">
+
+        <div id="emptyState" class="flex-1 flex flex-col items-center justify-center text-slate-400 select-none">
+          <svg class="w-16 h-16 mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          <p class="text-base font-medium">No mapping generated yet</p>
+          <p class="text-sm mt-1">Upload a source file and click Generate</p>
+        </div>
+
+        <div id="errorCard" class="hidden m-6 bg-red-50 rounded-2xl border border-red-200 p-5 fade-in flex-shrink-0">
+          <div class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+            </svg>
+            <div>
+              <p class="font-semibold text-red-800">Something went wrong</p>
+              <p id="errorMsg" class="text-sm text-red-700 mt-1 font-mono break-all"></p>
+            </div>
+          </div>
+        </div>
+
+        <div id="resultsPanel" class="hidden fade-in flex-1 flex flex-col overflow-hidden">
+          <!-- Stats + tabs bar -->
+          <div class="bg-white border-b border-slate-200 px-6 py-3 flex items-center gap-4 flex-shrink-0">
+            <div id="statsRow" class="flex flex-wrap gap-2 flex-1"></div>
+            <div class="flex gap-1 flex-shrink-0">
+              <button id="tabCsvBtn" onclick="switchResultTab('csv')"
+                      class="px-4 py-1.5 text-sm font-medium rounded-lg bg-blue-600 text-white transition-colors">CSV Mapping</button>
+              <button id="tabDiagramBtn" onclick="switchResultTab('diagram')"
+                      class="px-4 py-1.5 text-sm font-medium rounded-lg text-slate-500 hover:bg-slate-100 transition-colors">Draw.io Diagram</button>
+            </div>
+          </div>
+
+          <!-- CSV tab -->
+          <div id="tabCsv" class="flex-1 flex flex-col overflow-hidden p-4 gap-3">
+            <div class="flex items-center gap-3 flex-shrink-0 flex-wrap">
+              <div class="relative flex-1 min-w-[180px]">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                <input id="globalSearch" type="text" placeholder="Search all columns…" oninput="applyFilters()"
+                       class="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+              </div>
+              <div class="relative">
+                <button onclick="toggleColPanel()"
+                        class="flex items-center gap-2 px-3 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 font-medium text-slate-600 bg-white">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7"/>
+                  </svg>
+                  Columns
+                </button>
+                <div id="colPanel" class="hidden absolute right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-30 p-3 min-w-[200px]">
+                  <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Show / Hide</p>
+                  <div id="colCheckboxes" class="space-y-1.5"></div>
+                  <button onclick="resetColumns()" class="mt-3 w-full text-xs text-blue-600 hover:underline text-left">Show all</button>
+                </div>
+              </div>
+              <button id="clearFiltersBtn" onclick="clearFilters()" class="hidden text-sm text-red-500 hover:underline">Clear filters</button>
+              <span id="rowCount" class="text-xs text-slate-400 ml-auto"></span>
+            </div>
+            <div class="flex-1 overflow-auto rounded-xl border border-slate-200 bg-white">
+              <table class="w-full text-sm">
+                <thead id="tHead" class="bg-slate-50 border-b border-slate-200 sticky top-0 z-10"></thead>
+                <tbody id="tBody" class="divide-y divide-slate-100"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Diagram tab -->
+          <div id="tabDiagram" class="hidden flex-1 flex flex-col overflow-hidden">
+            <div class="flex items-center justify-between px-4 py-2 border-b border-slate-100 bg-slate-50 flex-shrink-0">
+              <span class="text-xs text-slate-400">Generated diagram</span>
+              <button onclick="openDiagramEditor('mapping')"
+                      class="hidden flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors shadow-sm"
+                      id="editMappingDiagramBtn">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                </svg>
+                Edit Diagram
+              </button>
+            </div>
+            <div class="flex-1 flex flex-col overflow-hidden p-4">
+              <div id="diagramLoading" class="flex items-center justify-center gap-3 flex-1 text-slate-400">
+                <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>
+                <span class="text-sm">Loading diagram…</span>
+              </div>
+              <div id="diagramContainer" class="hidden flex-1 border border-slate-200 rounded-xl overflow-auto bg-white"></div>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════════════
+         TOOL 2 — DIAGRAM BUILDER
+    ════════════════════════════════════════════════════════════════════════ -->
+    <div id="toolDiagram" class="hidden flex flex-1 overflow-hidden">
+
+      <!-- Sidebar -->
+      <aside class="bg-white border-r border-slate-200 flex flex-col flex-shrink-0" style="width:260px;min-width:260px;">
+
+        <div class="px-5 pt-5 pb-4 border-b border-slate-100">
+          <h2 class="text-sm font-semibold text-slate-700 mb-1">Diagram Builder</h2>
+          <p class="text-xs text-slate-400 leading-relaxed">Paste any field list → AI structures it → edit if needed → generate diagram.</p>
+        </div>
+
+        <!-- Steps legend -->
+        <div class="px-5 py-4 border-b border-slate-100 space-y-3 flex-shrink-0">
+          <div class="flex items-start gap-2.5">
+            <div class="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">1</div>
+            <p class="text-xs text-slate-500 leading-relaxed">Paste your raw field list in any format</p>
+          </div>
+          <div class="flex items-start gap-2.5">
+            <div class="w-5 h-5 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">2</div>
+            <p class="text-xs text-slate-500 leading-relaxed">AI groups &amp; structures the fields — edit the result if needed</p>
+          </div>
+          <div class="flex items-start gap-2.5">
+            <div class="w-5 h-5 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">3</div>
+            <p class="text-xs text-slate-500 leading-relaxed">Generate the Draw.io diagram</p>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="px-5 py-4 flex flex-col gap-2 flex-shrink-0">
+          <button onclick="generateDiagramDirect()"
+                  class="w-full bg-violet-600 hover:bg-violet-700 text-white font-semibold py-2.5 px-4 rounded-xl transition-colors flex items-center justify-center gap-2 text-sm shadow-sm">
+            <svg id="dbBtnIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span id="dbBtnText">Generate Diagram</span>
+          </button>
+          <a id="dbDownload" href="/download/diagram"
+             class="hidden w-full flex items-center justify-center gap-2 bg-violet-50 hover:bg-violet-100 text-violet-800 border border-violet-200 px-4 py-2.5 rounded-xl font-medium text-sm transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Download Draw.io
+          </a>
+          <div id="dbError" class="hidden text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2"></div>
+        </div>
+
+      </aside>
+
+      <!-- Main: 3-step editor + diagram -->
+      <main class="flex-1 flex overflow-hidden bg-slate-100">
+
+        <!-- Left: raw input + structured editor -->
+        <div class="flex flex-col overflow-hidden border-r border-slate-200 bg-white" style="width:45%;min-width:380px;">
+
+          <!-- Step 1: Raw input -->
+          <div class="flex flex-col border-b border-slate-200 flex-shrink-0" style="height:40%;">
+            <div class="flex items-center justify-between px-4 py-2.5 bg-slate-50 border-b border-slate-100 flex-shrink-0">
+              <div class="flex items-center gap-2">
+                <span class="w-4 h-4 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold">1</span>
+                <span class="text-xs font-semibold text-slate-600">Paste Your Field List</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <label class="flex items-center gap-1.5 cursor-pointer border border-slate-300 hover:border-blue-400 hover:bg-blue-50 text-slate-500 hover:text-blue-600 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                  </svg>
+                  Upload .drawio
+                  <input type="file" accept=".drawio,.xml" class="hidden" onchange="loadDrawioAsInput(this)">
+                </label>
+                <button onclick="processWithAI()"
+                        class="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors shadow-sm">
+                  <svg id="aiIcon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                  </svg>
+                  <span id="aiText">Clean up with AI</span>
+                </button>
+              </div>
+            </div>
+            <textarea id="dbRawInput"
+                      class="flex-1 p-3 text-sm font-mono focus:outline-none resize-none text-slate-700 bg-white"
+                      spellcheck="false"
+                      placeholder="Paste anything here — a numbered list, CSV, table, free text…
+
+Example:
+1. First Name
+2. Last Name
+3. Date of Birth
+4. Gender
+5. Email Address
+6. Mobile Phone
+7. Street Address
+8. Student ID"></textarea>
+          </div>
+
+          <!-- Step 2: Structured / editable output -->
+          <div class="flex flex-col flex-1 overflow-hidden">
+            <div class="flex items-center justify-between px-4 py-2.5 bg-slate-50 border-b border-slate-100 flex-shrink-0">
+              <div class="flex items-center gap-2">
+                <span class="w-4 h-4 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-bold">2</span>
+                <span class="text-xs font-semibold text-slate-600">Structured Fields — edit if needed</span>
+              </div>
+              <span class="text-xs text-slate-400">[GROUP] · apiName | Name | Type | flag</span>
+            </div>
+            <div id="dbStructuredEmpty" class="flex-1 flex flex-col items-center justify-center text-slate-300 select-none">
+              <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+              </svg>
+              <p class="text-sm text-slate-400">Click "Clean up with AI" above</p>
+              <p class="text-xs mt-1 text-slate-300">AI will group and structure your fields here</p>
+            </div>
+            <textarea id="diagramInput"
+                      class="hidden flex-1 p-3 text-sm font-mono focus:outline-none resize-none text-slate-700 bg-white"
+                      spellcheck="false"
+                      oninput="updateLineNumbers()"></textarea>
+          </div>
+
+        </div>
+
+        <!-- Right: Diagram preview -->
+        <div class="flex-1 flex flex-col overflow-hidden bg-white">
+          <div class="flex items-center justify-between px-4 py-2.5 border-b border-slate-100 bg-slate-50 flex-shrink-0">
+            <div class="flex items-center gap-2">
+              <span class="w-4 h-4 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center text-xs font-bold">3</span>
+              <span class="text-xs font-semibold text-slate-600">Diagram Preview</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span id="dbFieldCount" class="text-xs text-slate-400"></span>
+              <button onclick="openDiagramEditor('builder')"
+                      class="hidden flex items-center gap-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors shadow-sm"
+                      id="editBuilderDiagramBtn">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                </svg>
+                Edit Diagram
+              </button>
+            </div>
+          </div>
+          <div id="dbEmptyState" class="flex-1 flex flex-col items-center justify-center text-slate-300 select-none">
+            <svg class="w-14 h-14 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/>
+            </svg>
+            <p class="text-sm font-medium text-slate-400">Diagram will appear here</p>
+            <p class="text-xs mt-1 text-slate-300">Complete steps 1 &amp; 2, then click Generate Diagram</p>
+          </div>
+          <div id="dbDiagramContainer" class="hidden flex-1 overflow-auto"></div>
+        </div>
+
+      </main>
+
+    </div>
+
+  </div><!-- end body -->
+
+  <!-- ── Diagram Edit Modal ─────────────────────────────────────────────── -->
+  <div id="editModal" class="hidden fixed inset-0 z-50 flex flex-col bg-white">
+    <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200 bg-slate-50 flex-shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+        <span class="text-sm font-semibold text-slate-700">Editing Diagram</span>
+        <span class="text-xs text-slate-400">Changes are saved back to the app when you click Save inside the editor</span>
+      </div>
+      <button onclick="closeDiagramEditor()"
+              class="flex items-center gap-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+        Close Editor
+      </button>
+    </div>
+    <iframe id="editFrame" class="flex-1 w-full border-0"></iframe>
+  </div>
+
+  <script>
+    // ════════════════════════════════════════════════════════════════════════
+    // TOOL SWITCHER
+    // ════════════════════════════════════════════════════════════════════════
+    function switchTool(tool) {
+      const isMapping = tool === 'mapping';
+      document.getElementById('toolMapping').classList.toggle('hidden', !isMapping);
+      document.getElementById('toolMapping').classList.toggle('flex',   isMapping);
+      document.getElementById('toolDiagram').classList.toggle('hidden', isMapping);
+      document.getElementById('toolDiagram').classList.toggle('flex',   !isMapping);
+
+      const mBtn = document.getElementById('navMapping');
+      const dBtn = document.getElementById('navDiagram');
+      if (isMapping) {
+        mBtn.className = 'px-4 py-1.5 text-sm font-medium rounded-lg bg-white text-slate-800 shadow-sm transition-all';
+        dBtn.className = 'px-4 py-1.5 text-sm font-medium rounded-lg text-slate-500 hover:text-slate-700 transition-all';
+      } else {
+        dBtn.className = 'px-4 py-1.5 text-sm font-medium rounded-lg bg-white text-slate-800 shadow-sm transition-all';
+        mBtn.className = 'px-4 py-1.5 text-sm font-medium rounded-lg text-slate-500 hover:text-slate-700 transition-all';
+      }
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // TOOL 1 — MDM MAPPING
+    // ════════════════════════════════════════════════════════════════════════
+    const dropZone  = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    let selectedFile = null;
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drop-active'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drop-active'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault(); dropZone.classList.remove('drop-active');
+      if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener('change', () => { if (fileInput.files[0]) setFile(fileInput.files[0]); });
+
+    function setFile(f) {
+      selectedFile = f;
+      document.getElementById('fileLabel').textContent = `${f.name} (${(f.size/1024).toFixed(1)} KB)`;
+      document.getElementById('fileBadge').classList.remove('hidden');
+      document.getElementById('fileBadge').classList.add('flex');
+    }
+    function clearFile() {
+      selectedFile = null; fileInput.value = '';
+      document.getElementById('fileBadge').classList.add('hidden');
+      document.getElementById('fileBadge').classList.remove('flex');
+    }
+
+    const SPINNER = `<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>`;
+    const CHECK  = `<svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>`;
+
+    function stepRunning(n, msg) {
+      const icon = document.getElementById(`s${n}icon`);
+      icon.className = 'w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 transition-all';
+      icon.innerHTML = SPINNER;
+      const m = document.getElementById(`s${n}msg`); m.textContent = msg; m.className = 'text-xs text-blue-600 mt-0.5 leading-relaxed';
+    }
+    function stepDone(n, msg) {
+      const icon = document.getElementById(`s${n}icon`);
+      icon.className = 'w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 transition-all';
+      icon.innerHTML = CHECK;
+      const m = document.getElementById(`s${n}msg`); m.textContent = msg; m.className = 'text-xs text-green-600 mt-0.5';
+      const conn = document.getElementById(`s${n}connector`); if (conn) conn.classList.add('done');
+    }
+
+    function startGeneration() {
+      const text = document.getElementById('textInput').value.trim();
+      if (!selectedFile && !text) { alert('Please upload a file or paste text first.'); return; }
+
+      const btn = document.getElementById('generateBtn');
+      btn.disabled = true; btn.classList.add('opacity-75', 'cursor-not-allowed');
+      document.getElementById('btnText').textContent = 'Generating…';
+      document.getElementById('btnIcon').outerHTML = `<svg id="btnIcon" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>`;
+
+      document.getElementById('progressSection').classList.remove('hidden');
+      document.getElementById('emptyState').classList.add('hidden');
+      document.getElementById('resultsPanel').classList.add('hidden');
+      document.getElementById('errorCard').classList.add('hidden');
+      [1,2,3].forEach(n => {
+        const icon = document.getElementById(`s${n}icon`);
+        icon.className = 'w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0 transition-all';
+        icon.innerHTML = `<span class="text-slate-400 font-bold text-xs">${n}</span>`;
+        const m = document.getElementById(`s${n}msg`); m.textContent = 'Waiting…'; m.className = 'text-xs text-slate-400 mt-0.5';
+        const conn = document.getElementById(`s${n}connector`); if (conn) conn.classList.remove('done');
+      });
+
+      const fd = new FormData();
+      if (selectedFile) fd.append('file', selectedFile); else fd.append('text', text);
+
+      fetch('/generate', { method: 'POST', body: fd })
+        .then(res => {
+          const reader = res.body.getReader(); const decoder = new TextDecoder(); let buffer = '';
+          function pump({ done, value }) {
+            if (done) return;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n'); buffer = lines.pop();
+            lines.forEach(line => {
+              if (!line.startsWith('data: ')) return;
+              const data = JSON.parse(line.slice(6));
+              if (data.step === 'error') { document.getElementById('errorMsg').textContent = data.message; document.getElementById('errorCard').classList.remove('hidden'); document.getElementById('emptyState').classList.remove('hidden'); resetBtn(); return; }
+              if (typeof data.step === 'number') { if (data.status === 'running') stepRunning(data.step, data.message); else stepDone(data.step, data.message); }
+              if (data.step === 'complete') { renderTable(data.csv); document.getElementById('resultsPanel').classList.remove('hidden'); document.getElementById('downloadSection').classList.remove('hidden'); document.getElementById('headerStatus').classList.remove('hidden'); renderMappingDiagram(); resetBtn(); }
+            });
+            return reader.read().then(pump);
+          }
+          return reader.read().then(pump);
+        })
+        .catch(err => { document.getElementById('errorMsg').textContent = err.message; document.getElementById('errorCard').classList.remove('hidden'); resetBtn(); });
+    }
+
+    function resetBtn() {
+      const btn = document.getElementById('generateBtn');
+      btn.disabled = false; btn.classList.remove('opacity-75', 'cursor-not-allowed');
+      document.getElementById('btnText').textContent = 'Generate MDM Mapping';
+      const icon = document.getElementById('btnIcon');
+      if (icon) icon.outerHTML = `<svg id="btnIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>`;
+    }
+
+    function switchResultTab(tab) {
+      const isCsv = tab === 'csv';
+      document.getElementById('tabCsv').classList.toggle('hidden', !isCsv);
+      document.getElementById('tabCsv').classList.toggle('flex', isCsv);
+      document.getElementById('tabDiagram').classList.toggle('hidden', isCsv);
+      document.getElementById('tabDiagram').classList.toggle('flex', !isCsv);
+      const cb = document.getElementById('tabCsvBtn'), db = document.getElementById('tabDiagramBtn');
+      if (isCsv) { cb.className = 'px-4 py-1.5 text-sm font-medium rounded-lg bg-blue-600 text-white transition-colors'; db.className = 'px-4 py-1.5 text-sm font-medium rounded-lg text-slate-500 hover:bg-slate-100 transition-colors'; }
+      else       { db.className = 'px-4 py-1.5 text-sm font-medium rounded-lg bg-blue-600 text-white transition-colors'; cb.className = 'px-4 py-1.5 text-sm font-medium rounded-lg text-slate-500 hover:bg-slate-100 transition-colors'; }
+      if (!isCsv && !_currentXml.mapping) renderMappingDiagram();
+    }
+
+    function renderMappingDiagram() {
+      fetch('/api/drawio-xml').then(r => {
+        if (!r.ok) throw new Error('not_generated');
+        return r.text();
+      }).then(xml => {
+        _currentXml.mapping = xml;
+        document.getElementById('diagramLoading').classList.add('hidden');
+        document.getElementById('editMappingDiagramBtn').classList.remove('hidden');
+        const c = document.getElementById('diagramContainer'); c.classList.remove('hidden'); c.classList.add('flex');
+        c.innerHTML = `<div class="mxgraph" style="width:100%;height:100%;" data-mxgraph="${escapeAttr(JSON.stringify({highlight:'#3b82f6',nav:true,resize:true,toolbar:'zoom layers lightbox',xml}))}"></div>`;
+        if (window.GraphViewer) window.GraphViewer.processElements();
+      }).catch(err => {
+        const msg = err.message === 'not_generated'
+          ? 'Run the mapping pipeline first to generate a diagram.'
+          : 'Failed to load diagram.';
+        document.getElementById('diagramLoading').innerHTML = `<p class="text-sm text-slate-400">${msg}</p>`;
+      });
+    }
+
+    // Demo data
+    const DEMO_DATA = [["ID","MDM Attribute Name","MDM Field Group","MDM API Name","MDM Data Type","Source Table","Source Field","Mapping Status","Notes"],["A001","Title","ROOT","title","Text, 255","PS_NAMES","NAME_TITLE","Custom","OOTB `title` is plain Text [255]. Source NAME_TITLE is a structured salutation code (e.g. MR, MRS, DR). Custom lookup field required. Open Item OI-01."],["A002","Prefix Name","ROOT","prefixName","Lookup → PrefixName","PS_NAMES","NAME_PREFIX","OOTB","Maps to OOTB `prefixName`. Lookup alignment required. Open Item OI-01."],["A003","First Name","ROOT","firstName","Text, 255","PS_NAMES","FIRST_NAME","OOTB","Direct mapping."],["A004","Middle Name","ROOT","middleName","Text, 255","PS_NAMES","MIDDLE_NAME","OOTB","Direct mapping."],["A005","Last Name","ROOT","lastName","Text, 255","PS_NAMES","LAST_NAME","OOTB","Direct mapping."],["A006","Full Name","ROOT","fullName","Text, 255","PS_NAMES","FIRST_NAME, LAST_NAME","OOTB (Derived)","Derived by concatenating FIRST_NAME + MIDDLE_NAME + LAST_NAME. Confirm format. Open Item OI-02."],["A007","Suffix Name","ROOT","suffixName","Lookup → SuffixName","PS_NAMES","NAME_SUFFIX","OOTB","Lookup alignment required."],["A008","Display Name","ALTERNATE NAMES","AlternateName","Text, 255","PS_NAMES","NAME_DISPLAY","OOTB","Maps to ALTERNATE NAMES group. Open Item OI-03."],["A009","Display Name Type","ALTERNATE NAMES","alternateNameType","Lookup → AlternateNameType","PS_NAMES","NAME_DISPLAY","OOTB (Derived)","Alternate Name Type must be set to 'Display'. Open Item OI-04."],["A010","Birth Date","ROOT","birthDate","Date Time","PS_PERSONAL_DATA","BIRTHDATE","OOTB","Direct mapping. Confirm source date format. Open Item OI-05."],["A011","Gender","ROOT","gender","Lookup → Gender","PS_PERSONAL_DATA","SEX","OOTB","Lookup alignment required."],["A012","Birth Place","ROOT","birthPlace","Text, 255","PS_PERSONAL_DATA","BIRTHCOUNTRY","Custom","OOTB birthPlace is plain Text. Source requires structured country code lookup. Custom field required. Open Item OI-06."],["A013","Citizen of Country","CITIZENSHIP","citizenOfCountry","Lookup → Country","PS_CITIZENSHIP","COUNTRY","OOTB","Lookup alignment required."],["A014","Residency Type","Custom","—","—","PS_RESIDENCY_OFF","RESIDENCYTYPE","Custom","No OOTB equivalent. Custom field required. Open Item OI-07."],["A015","Residency Status","Custom","—","—","PS_RESIDENCY_OFF","RESIDENCYSTATUS","Custom","No OOTB equivalent. Custom field required. Open Item OI-07."],["A016","Email Address Type","EMAIL","usageType","Lookup → ElectronicAddressUsageType","PSXLATITEM","E_ADDR_TYPE","OOTB","Lookup alignment required."],["A017","Email Address","EMAIL","electronicAddress","Text, 255","PS_EMAIL_ADDRESSES","EMAIL_ADDR","OOTB","Direct mapping."],["A018","Email Default Indicator","EMAIL","defaultIndicator","Boolean","PS_EMAIL_ADDRESSES","PREF_EMAIL_FLAG","OOTB (Derived)","Y → true, N → false."],["A019","Phone Type","PHONE","phoneType","Lookup → PhoneType","PS_PERSONAL_PHONE","PHONE_TYPE","OOTB","Lookup alignment required."],["A020","Phone Country Code","PHONE","prefixNumber","Text, 255","PS_PERSONAL_PHONE","COUNTRY_CODE","OOTB","Direct mapping."],["A021","Phone Number","PHONE","phoneNumber","Text, 255","PS_PERSONAL_PHONE","PHONE","OOTB","Two source rows — each maps to a separate MDM PHONE record. Open Item OI-08."],["A022","Address Type","ADDRESS","addressType","Lookup → AddressType","PS_ADDRESSES","ADDRESS_TYPE","OOTB","Lookup alignment required."],["A023","Address Line 1","ADDRESS","addressLine1","Text, 200","PS_ADDRESSES","ADDRESS1","OOTB","Direct mapping."],["A024","Address Line 2","ADDRESS","addressLine2","Text, 200","PS_ADDRESSES","ADDRESS2","OOTB","Direct mapping."],["A025","Address Line 3","ADDRESS","addressLine3","Text, 200","PS_ADDRESSES","ADDRESS3","OOTB","Direct mapping."],["A026","City","ADDRESS","city","Text, 50","PS_ADDRESSES","CITY","OOTB","Direct mapping."],["A027","State","ADDRESS","state","Lookup → State","PS_ADDRESSES","STATE","OOTB","Lookup alignment required."],["A028","Postal Code","ADDRESS","postalCode","Text, 10","PS_ADDRESSES","POSTAL","OOTB","Direct mapping."],["A029","Address Country","ADDRESS","country","Lookup → Country","PS_ADDRESSES","COUNTRY","OOTB","Lookup alignment required."],["A030","Employee ID Type","IDENTIFIER","alternateIdentifierType","Lookup → AlternateIdType","PS_PERSONAL_DATA","EMPLID","OOTB (Derived)","Set Identifier Type to 'Employee ID'. Open Item OI-09."],["A031","Employee ID Value","IDENTIFIER","alternateIdentifierValue","Text, 255","PS_PERSONAL_DATA","EMPLID","OOTB","Direct mapping."],["A032","USI Type","IDENTIFIER","alternateIdentifierType","Lookup → AlternateIdType","PS_NG_PERS_USI","NG_USI","OOTB (Derived)","Set Identifier Type to 'USI'. Open Item OI-09."],["A033","USI Value","IDENTIFIER","alternateIdentifierValue","Text, 255","PS_NG_PERS_USI","NG_USI","OOTB","Direct mapping."],["A034","Last Updated Date Time","ROOT","—","—","PS_PERSON","LAST_CHILD_UPDDTM","Not Required","Source audit timestamp only. Handle at ETL layer if needed."],["A035","Affiliation Code Type","IDENTIFIER","alternateIdentifierType","Lookup → AlternateIdType","PS_SCC_AFL_PERSON","SCC_AFL_CODE","OOTB (Derived)","Set Identifier Type to 'Affiliation Code'. Open Item OI-09."],["A036","Affiliation Code Value","IDENTIFIER","alternateIdentifierValue","Text, 255","PS_SCC_AFL_PERSON","SCC_AFL_CODE","OOTB","Direct mapping."],["A037","Affiliation Status","IDENTIFIER","identifierStatus","Lookup → IdentifierStatus","PS_SCC_AFL_PERSON","SCC_AFL_STATUS","OOTB","Lookup alignment required. Open Item OI-10."],["A038","Affiliation Start Date","IDENTIFIER","effectiveStartDate","Date Time","PS_SCC_AFL_PERSON","START_DT","OOTB","Direct mapping."],["A039","Affiliation End Date","IDENTIFIER","effectiveEndDate","Date Time","PS_SCC_AFL_PERSON","END_DT","OOTB","Direct mapping."]];
+
+    function loadDemo() {
+      document.getElementById('emptyState').classList.add('hidden');
+      document.getElementById('progressSection').classList.remove('hidden');
+      [1,2,3].forEach(n => stepDone(n, ['AI response (demo)','39 rows extracted','38 fields mapped'][n-1]));
+      renderTable(DEMO_DATA);
+      document.getElementById('resultsPanel').classList.remove('hidden');
+      document.getElementById('downloadSection').classList.remove('hidden');
+      document.getElementById('headerStatus').classList.remove('hidden');
+      generateDemoDiagram();
+    }
+
+    function generateDemoDiagram() {
+      const headers = DEMO_DATA[0];
+      const rows    = DEMO_DATA.slice(1);
+      const iApi    = headers.indexOf('MDM API Name');
+      const iName   = headers.indexOf('MDM Attribute Name');
+      const iGroup  = headers.indexOf('MDM Field Group');
+      const iType   = headers.indexOf('MDM Data Type');
+      const iStatus = headers.indexOf('Mapping Status');
+
+      const groups = {};
+      rows.forEach(row => {
+        const status = row[iStatus] || '';
+        if (status === 'Not Required') return;
+        const apiName = (row[iApi] || '').trim();
+        if (!apiName || apiName === '—' || apiName === '-' || apiName === '--') return;
+        const group   = row[iGroup] || 'ROOT';
+        const display = row[iName]  || apiName;
+        const dtype   = (row[iType] || 'Text').split(',')[0].trim();
+        const flag    = status === 'Custom' ? 'custom' : status === 'OOTB (Derived)' ? 'derived' : '';
+        if (!groups[group]) groups[group] = [];
+        groups[group].push({ apiName, display, dtype, flag });
+      });
+
+      const lines = [];
+      for (const [grp, fields] of Object.entries(groups)) {
+        lines.push(`[${grp}]`);
+        fields.forEach(f => {
+          const parts = [f.apiName, f.display, f.dtype];
+          if (f.flag) parts.push(f.flag);
+          lines.push(parts.join(' | '));
+        });
+        lines.push('');
+      }
+
+      const fd = new FormData();
+      fd.append('input', lines.join('\n'));
+      fetch('/generate-diagram', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => {
+          if (!data.xml) return;
+          _currentXml.mapping = data.xml;
+          document.getElementById('diagramLoading').classList.add('hidden');
+          document.getElementById('editMappingDiagramBtn').classList.remove('hidden');
+          const c = document.getElementById('diagramContainer');
+          c.classList.remove('hidden'); c.classList.add('flex');
+          c.innerHTML = `<div class="mxgraph" style="width:100%;height:100%;" data-mxgraph="${escapeAttr(JSON.stringify({highlight:'#3b82f6',nav:true,resize:true,toolbar:'zoom layers lightbox',xml:data.xml}))}"></div>`;
+          if (window.GraphViewer) window.GraphViewer.processElements();
+        })
+        .catch(() => {
+          document.getElementById('diagramLoading').innerHTML = '<p class="text-sm text-slate-400">Could not generate demo diagram.</p>';
+        });
+    }
+
+    // ── Table state ──────────────────────────────────────────────────────
+    const STATUS_COLORS = { 'Mapped':'bg-green-100 text-green-800','Custom':'bg-violet-100 text-violet-800','Not Required':'bg-slate-100 text-slate-500','Partially Mapped':'bg-amber-100 text-amber-800','OOTB':'bg-blue-100 text-blue-800','OOTB (Derived)':'bg-orange-100 text-orange-800','Not Available':'bg-red-100 text-red-700' };
+    const DROPDOWN_COLS = ['Mapping Status','MDM Field Group','Source Table'];
+    let _allData=[], _colVisible={}, _colFilters={};
+
+    function renderTable(csvData) {
+      _allData = csvData; const headers = csvData[0];
+      headers.forEach((_,i) => { _colVisible[i]=true; }); _colFilters={};
+      const rows=csvData.slice(1), stats={}, sIdx=headers.indexOf('Mapping Status');
+      if (sIdx>=0) rows.forEach(r => { const s=r[sIdx]||'Unknown'; stats[s]=(stats[s]||0)+1; });
+      document.getElementById('statsRow').innerHTML =
+        Object.entries(stats).map(([k,v]) => `<span class="px-2.5 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[k]||'bg-blue-100 text-blue-800'}">${v} ${k}</span>`).join('') +
+        `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">${rows.length} rows</span>`;
+      document.getElementById('colCheckboxes').innerHTML = headers.map((h,i) =>
+        `<label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer"><input type="checkbox" checked onchange="toggleCol(${i})" id="colCb${i}" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500"> ${h}</label>`
+      ).join('');
+      applyFilters();
+    }
+
+    function applyFilters() {
+      if (!_allData.length) return;
+      const headers=_allData[0], rows=_allData.slice(1), global=(document.getElementById('globalSearch')?.value||'').toLowerCase();
+      const filtered = rows.filter(row => {
+        const colMatch = Object.entries(_colFilters).every(([i,v]) => !v||(row[i]||'').toLowerCase().includes(v.toLowerCase()));
+        return colMatch && (!global || row.some(c=>(c||'').toLowerCase().includes(global)));
+      });
+      const hasFilter = global||Object.values(_colFilters).some(v=>v);
+      document.getElementById('clearFiltersBtn').classList.toggle('hidden', !hasFilter);
+      document.getElementById('rowCount').textContent = `${filtered.length} of ${rows.length} rows`;
+      const visCols = headers.map((_,i)=>i).filter(i=>_colVisible[i]);
+      document.getElementById('tHead').innerHTML =
+        '<tr>'+visCols.map(i=>`<th class="px-4 py-2.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap bg-slate-50">${headers[i]}</th>`).join('')+'</tr>'+
+        '<tr class="bg-white border-b border-slate-100">'+visCols.map(i => {
+          const isDD=DROPDOWN_COLS.includes(headers[i]);
+          if (isDD) { const unique=[...new Set(_allData.slice(1).map(r=>r[i]||''))].filter(Boolean).sort(); return `<th class="px-2 py-1.5 bg-white"><select onchange="setColFilter(${i},this.value)" class="w-full text-xs border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-400"><option value="">All</option>${unique.map(v=>`<option value="${v}" ${_colFilters[i]===v?'selected':''}>${v}</option>`).join('')}</select></th>`; }
+          return `<th class="px-2 py-1.5 bg-white"><input type="text" placeholder="Filter…" value="${_colFilters[i]||''}" oninput="setColFilter(${i},this.value)" class="w-full text-xs border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-400 min-w-[70px]"></th>`;
+        }).join('')+'</tr>';
+      document.getElementById('tBody').innerHTML = filtered.length
+        ? filtered.map((row,ri) => `<tr class="${ri%2===0?'bg-white':'bg-slate-50/60'} hover:bg-blue-50 transition-colors">`+visCols.map(j => {
+            const isId=headers[j]==='ID', isStatus=headers[j]==='Mapping Status', isNotes=headers[j]==='Notes', cell=row[j]||'';
+            let content=cell||'–';
+            if (isStatus) { const cls=STATUS_COLORS[cell]||'bg-blue-100 text-blue-800'; content=`<span class="px-2 py-0.5 rounded-full text-xs font-semibold ${cls} whitespace-nowrap">${cell||'–'}</span>`; }
+            const tdCls=isId?'px-4 py-2 font-mono text-xs text-slate-400 whitespace-nowrap':isNotes?'px-4 py-2 text-slate-700 min-w-[600px] max-w-[600px] truncate whitespace-nowrap':'px-4 py-2 text-slate-700 max-w-[240px] truncate whitespace-nowrap';
+            return `<td class="${tdCls}" title="${cell}">${content}</td>`;
+          }).join('')+'</tr>').join('')
+        : `<tr><td colspan="${visCols.length}" class="px-4 py-12 text-center text-slate-400 text-sm">No rows match current filters.</td></tr>`;
+    }
+
+    function setColFilter(i,val){_colFilters[i]=val;applyFilters();}
+    function toggleCol(i){_colVisible[i]=!_colVisible[i];applyFilters();}
+    function resetColumns(){Object.keys(_colVisible).forEach(i=>{_colVisible[i]=true;});document.querySelectorAll('[id^="colCb"]').forEach(cb=>cb.checked=true);applyFilters();}
+    function clearFilters(){_colFilters={};document.getElementById('globalSearch').value='';applyFilters();}
+    function toggleColPanel(){document.getElementById('colPanel').classList.toggle('hidden');}
+    document.addEventListener('click',e=>{const p=document.getElementById('colPanel'),b=p?.previousElementSibling;if(p&&!p.contains(e.target)&&!b?.contains(e.target))p.classList.add('hidden');});
+
+    function escapeAttr(s){return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+    // ════════════════════════════════════════════════════════════════════════
+    // TOOL 2 — DIAGRAM BUILDER
+    // ════════════════════════════════════════════════════════════════════════
+
+    function processWithAI() {
+      const raw = document.getElementById('dbRawInput').value.trim();
+      if (!raw) { showDbError('Paste some field names in Step 1 first.'); return; }
+
+      const aiText = document.getElementById('aiText');
+      const aiIcon = document.getElementById('aiIcon');
+      aiText.textContent = 'Processing…';
+      aiIcon.outerHTML = `<svg id="aiIcon" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>`;
+      document.getElementById('dbError').classList.add('hidden');
+
+      const fd = new FormData(); fd.append('raw', raw);
+      fetch('/process-diagram-input', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => {
+          resetAiBtn();
+          if (data.error) { showDbError(data.error); return; }
+          const ta = document.getElementById('diagramInput');
+          ta.value = data.structured;
+          ta.classList.remove('hidden');
+          document.getElementById('dbStructuredEmpty').classList.add('hidden');
+        })
+        .catch(err => { resetAiBtn(); showDbError(err.message); });
+    }
+
+    function resetAiBtn() {
+      document.getElementById('aiText').textContent = 'Clean up with AI';
+      const icon = document.getElementById('aiIcon');
+      if (icon) icon.outerHTML = `<svg id="aiIcon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>`;
+    }
+
+    function generateDiagramDirect() {
+      const input = document.getElementById('diagramInput').value.trim();
+      if (!input) { showDbError('Complete Step 2 first — click "Clean up with AI" or type your structured fields.'); return; }
+
+      const btn  = document.getElementById('dbBtnText');
+      const icon = document.getElementById('dbBtnIcon');
+      btn.textContent = 'Generating…';
+      icon.outerHTML = `<svg id="dbBtnIcon" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>`;
+      document.getElementById('dbError').classList.add('hidden');
+
+      const fd = new FormData(); fd.append('input', input);
+      fetch('/generate-diagram', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => {
+          resetDbBtn();
+          if (data.error) { showDbError(data.error); return; }
+          _currentXml.builder = data.xml;
+          document.getElementById('dbEmptyState').classList.add('hidden');
+          document.getElementById('dbFieldCount').textContent = `${data.fields} fields`;
+          document.getElementById('editBuilderDiagramBtn').classList.remove('hidden');
+          const c = document.getElementById('dbDiagramContainer');
+          c.classList.remove('hidden');
+          c.innerHTML = `<div class="mxgraph" style="width:100%;height:100%;" data-mxgraph="${escapeAttr(JSON.stringify({highlight:'#3b82f6',nav:true,resize:true,toolbar:'zoom layers lightbox',xml:data.xml}))}"></div>`;
+          if (window.GraphViewer) window.GraphViewer.processElements();
+          document.getElementById('dbDownload').classList.remove('hidden');
+        })
+        .catch(err => { resetDbBtn(); showDbError(err.message); });
+    }
+
+    function loadDrawioAsInput(input) {
+      const file = input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const ta = document.getElementById('dbRawInput');
+        ta.value = e.target.result;
+        // show a hint that it was loaded
+        ta.classList.add('border-blue-300');
+        setTimeout(() => ta.classList.remove('border-blue-300'), 1500);
+      };
+      reader.readAsText(file);
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // DIAGRAM EDITOR (embed.diagrams.net)
+    // ════════════════════════════════════════════════════════════════════════
+    let _currentXml   = { mapping: null, builder: null };
+    let _editingTool  = null;
+
+    function openDiagramEditor(tool) {
+      const xml = _currentXml[tool];
+      if (!xml) return;
+      _editingTool = tool;
+      document.getElementById('editModal').classList.remove('hidden');
+      document.getElementById('editFrame').src =
+        'https://embed.diagrams.net/?embed=1&spin=1&proto=json&libraries=1&saveAndExit=1&noSaveBtn=0';
+    }
+
+    function closeDiagramEditor() {
+      document.getElementById('editModal').classList.add('hidden');
+      document.getElementById('editFrame').src = '';
+      _editingTool = null;
+    }
+
+    window.addEventListener('message', function(evt) {
+      // Only handle messages when the diagram editor is actually open
+      if (!_editingTool) return;
+      if (!evt.data || typeof evt.data !== 'string') return;
+      let msg;
+      try { msg = JSON.parse(evt.data); } catch(e) { return; }
+      if (!msg.event) return;
+
+      const iframe = document.getElementById('editFrame');
+      if (!iframe || !iframe.contentWindow) return;
+
+      if (msg.event === 'init') {
+        iframe.contentWindow.postMessage(JSON.stringify({
+          action: 'load',
+          xml: _currentXml[_editingTool] || ''
+        }), '*');
+      } else if (msg.event === 'save') {
+        _currentXml[_editingTool] = msg.xml;
+        refreshDiagramViewer(_editingTool, msg.xml);
+      } else if (msg.event === 'exit') {
+        closeDiagramEditor();
+      }
+    });
+
+    function refreshDiagramViewer(tool, xml) {
+      const containerId = tool === 'mapping' ? 'diagramContainer' : 'dbDiagramContainer';
+      const c = document.getElementById(containerId);
+      c.classList.remove('hidden');
+      c.innerHTML = `<div class="mxgraph" style="width:100%;height:100%;" data-mxgraph="${escapeAttr(JSON.stringify({highlight:'#3b82f6',nav:true,resize:true,toolbar:'zoom layers lightbox',xml}))}"></div>`;
+      if (window.GraphViewer) window.GraphViewer.processElements();
+    }
+
+    function updateLineNumbers() {} // no-op, kept for compatibility
+
+    function showDbError(msg) {
+      const el = document.getElementById('dbError'); el.textContent = msg; el.classList.remove('hidden');
+    }
+    function resetDbBtn() {
+      document.getElementById('dbBtnText').textContent = 'Generate Diagram';
+      const icon = document.getElementById('dbBtnIcon');
+      if (icon) icon.outerHTML = `<svg id="dbBtnIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
+    }
+  </script>
+</body>
+</html>
