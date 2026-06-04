@@ -26,17 +26,19 @@ For every source field, determine the best MDM target field and produce a row wi
 | ID | Sequential number (e.g. A001, A002) |
 | MDM Attribute Name | Business-friendly name for the target MDM field |
 | MDM Field Group | The OOTB group it belongs to (ROOT, ADDRESS, EMAIL, etc.) |
-| MDM API Name | The technical API field name from the OOTB reference |
+| MDM API Name | The technical API field name from the OOTB reference. For custom fields, use a plain camelCase name with no prefix (e.g. `affiliationCode`, not `custom_affiliationCode` or `X_affiliationCode`). |
 | MDM Data Type | Data type from the OOTB reference |
 | Source Table | Source system table name |
 | Source Field | Source system field name |
-| Mapping Status | One of: OOTB / OOTB (Derived) / Custom / Not Available / Not Required |
+| Source Data Type | Data type of the source field as provided in the source system file |
+| Mapping Status | One of: OOTB / OOTB (Derived) / Custom / Custom (Type Mismatch) / Not Available / Not Required |
 | Notes | Transformation logic, lookup alignment needs, business caveats, open questions |
 
 **Mapping Status definitions:**
 - **OOTB** — Direct mapping to an existing OOTB field. No transformation needed.
 - **OOTB (Derived)** — An OOTB field exists but the value must be transformed or derived before loading (e.g. code-to-description lookup, flag-to-boolean conversion, concatenation).
 - **Custom** — No suitable OOTB field exists. A custom field extension must be built.
+- **Custom (Type Mismatch)** — An OOTB field exists and the field name matches, but the source data type is incompatible with the OOTB field's data type (e.g. source is Text but OOTB is Date Time or Boolean). Informatica MDM will not permit loading the value into the OOTB field. A custom field must be built. Always note the OOTB field that would have been used and the type conflict in the Notes column.
 - **Not Available** — The data does not exist in the source system. Note it but do not create a mapping row for it.
 
 ### 2. Summary by MDM Field Group
@@ -71,22 +73,31 @@ Apply these rules when matching source fields to MDM OOTB fields:
 
 3. **Flag fields map to Boolean indicators.** Any source field that is a Y/N or true/false flag maps to a Boolean field in MDM (e.g. preferred flag → defaultIndicator).
 
-4. **OOTB (Derived) is for computation only — not for lookup alignment.** Apply these rules strictly:
+4. **Data type incompatibility forces Custom (Type Mismatch).** If the source field name matches (or maps to) an OOTB field, but the source data type is fundamentally incompatible with the OOTB field's data type, Informatica MDM will not permit use of the OOTB field. In this case, mark the mapping as **Custom (Type Mismatch)** (not plain Custom), and note the OOTB field that would have been used and the type conflict in the Notes column. Use this compatibility guide:
+   - OOTB `Text` ← source `Text`, `VARCHAR`, `CHAR`, `NVARCHAR` — **compatible**
+   - OOTB `Lookup` ← source `Text`, `Text (Lookup)`, `Text (List of Values)` — **compatible**
+   - OOTB `Date Time` ← source `Date`, `DateTime`, `Timestamp` — **compatible**; source `Text` — **incompatible → Custom**
+   - OOTB `Boolean` ← source `Boolean`, `BIT` — **compatible**; source `Text` (non-flag) — **incompatible → Custom**; source `Text` Y/N flag — **OOTB (Derived)**
+   - OOTB `Double` ← source `Number`, `Decimal`, `Float`, `Integer` — **compatible**; source `Text` — **incompatible → Custom**
+
+5. **OOTB (Derived) is for computation only — not for lookup alignment.** Apply these rules strictly:
    - **OOTB** — The OOTB reference has a matching field AND the source value maps directly to it, even if reference data alignment (code mapping, lookup configuration) is needed. Standard lookup alignment is part of normal MDM OOTB configuration. Examples: Gender source code M/F/X maps to Gender [Lookup] = **OOTB**. Address Type maps to addressType [Lookup] = **OOTB**. Date of Birth maps to birthDate [DateTime] = **OOTB**. State, Country (address), Phone Type, Country of Citizenship = **OOTB**.
    - **OOTB (Derived)** — Use ONLY when the value must be **computed or constructed** from source fields, not available as a direct value. Examples: full name concatenated from first + last name; a boolean indicator derived from a Y/N flag; a preferred name filtered using a type code (WHERE NAME_TYPE='PRF'); phone default indicator derived from PREF_PHONE_FLAG.
    - **Custom** — Use Custom only when: (a) no OOTB field exists for the concept at all (e.g. Residency Type has no OOTB equivalent), OR (b) the OOTB field is plain Text but the business requires a structured lookup that OOTB does not provide (e.g. Title is Text in OOTB but source uses a structured salutation code list; Country of Birth maps to birthPlace Text in OOTB but source requires a structured country code lookup). Do NOT mark Custom just because lookup alignment is needed.
 
-5. **Multiple source rows to same MDM field.** When the source system has multiple rows for the same logical field (e.g. two residency rows), map each to a separate MDM record in the same field group. Note the distinction in the Notes column.
+6. **Multiple source rows to same MDM field.** When the source system has multiple rows for the same logical field (e.g. two residency rows), map each to a separate MDM record in the same field group. Note the distinction in the Notes column.
 
-6. **Preferred / Primary flags.** Map preferred or primary flags to the MDM `defaultIndicator` Boolean field on the relevant entity (email, phone, address).
+7. **Preferred / Primary flags.** Map preferred or primary flags to the MDM `defaultIndicator` Boolean field on the relevant entity (email, phone, address).
 
-7. **Do not over-engineer.** Do not propose using a complex OOTB field group if the data need is simple. Match the complexity of the solution to the actual data being mapped.
+8. **Image and photo fields map to imageUrl.** If the source has a field representing an image, photo, picture, or profile URL — regardless of whether a data type is provided — map it to the OOTB `imageUrl [Text, 255]` field in the ROOT group. There is no dedicated URL data type in Informatica MDM; URLs are stored as Text.
 
-8. **Source fields only.** Only create mapping rows for fields that exist in the source system file. Do not add MDM platform-managed fields (e.g. golden record ID, soft-delete flag, system status, system timestamps). These are out of scope for the mapping document.
+9. **Do not over-engineer.** Do not propose using a complex OOTB field group if the data need is simple. Match the complexity of the solution to the actual data being mapped.
 
-9. **Alternate / preferred names must be separate rows.** If the source system has a preferred name, display name, or any name filtered by a type code (e.g. NAME_TYPE='PRF'), always create a dedicated ALTERNATE NAMES field group row for it. Never merge it into the ROOT fullName field. Both the AlternateName value and the alternateNameType must appear as separate mapping rows.
+10. **Source fields only.** Only create mapping rows for fields that exist in the source system file. Do not add MDM platform-managed fields (e.g. golden record ID, soft-delete flag, system status, system timestamps). These are out of scope for the mapping document.
 
-10. **Never mark a source field as Not Available if the source file lists it.** If a field appears in the source specification table (even with no sample data or empty columns), it is available in the source. Only mark Not Available if the source explicitly states the data does not exist (e.g. "Not available" in the Table Name column).
+11. **Alternate / preferred names must be separate rows.** If the source system has a preferred name, display name, or any name filtered by a type code (e.g. NAME_TYPE='PRF'), always create a dedicated ALTERNATE NAMES field group row for it. Never merge it into the ROOT fullName field. Both the AlternateName value and the alternateNameType must appear as separate mapping rows.
+
+12. **Never mark a source field as Not Available if the source file lists it.** If a field appears in the source specification table (even with no sample data or empty columns), it is available in the source. Only mark Not Available if the source explicitly states the data does not exist (e.g. "Not available" in the Table Name column).
 
 ---
 

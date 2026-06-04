@@ -26,7 +26,7 @@ DRAWIO_PATH = os.path.join(OUTPUT_DIR, "mdm_mapping.drawio")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 HEADERS = ["ID", "MDM Attribute Name", "MDM Field Group", "MDM API Name",
-           "MDM Data Type", "Source Table", "Source Field", "Mapping Status", "Notes"]
+           "MDM Data Type", "Source Table", "Source Field", "Source Data Type", "Mapping Status", "Notes"]
 
 # ── Pipeline steps ────────────────────────────────────────────────────────────
 
@@ -43,16 +43,21 @@ def step_api_mapping(text: str):
     )
 
     client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", ""))
-    response = client.messages.create(
+    full_text = ""
+    with client.messages.stream(
         model="claude-sonnet-4-6",
         max_tokens=16000,
         system=system_prompt,
         messages=[{"role": "user", "content": user_message}]
-    )
-    output = response.content[0].text
+    ) as stream:
+        for chunk in stream.text_stream:
+            full_text += chunk
+            yield ("token", chunk)
+        final = stream.get_final_message()
+
     with open(MD_PATH, "w") as f:
-        f.write(output)
-    return response.usage.input_tokens, response.usage.output_tokens
+        f.write(full_text)
+    yield ("done", (final.usage.input_tokens, final.usage.output_tokens))
 
 
 def step_convert_csv():
@@ -106,8 +111,8 @@ def step_generate_diagram():
         if api_name in ("—", "-", "--"):
             if status == "Custom":
                 words = mdm_name.replace("/", " ").replace("(", "").replace(")", "").split()
-                camel = words[0].lower() + "".join(w.capitalize() for w in words[1:])
-                api_name = camel if camel.lower().startswith("x_") else f"X_{camel}"
+                slug = "_".join(w.lower() for w in words)
+                api_name = slug if slug.startswith("x_") else f"x_{slug}"
             else:
                 continue
         if not api_name or not attr_id:
@@ -183,8 +188,15 @@ def generate():
 
     def stream():
         try:
-            yield f"data: {json.dumps({'step': 1, 'status': 'running', 'message': 'Calling Claude AI — this takes 30–60 seconds…'})}\n\n"
-            in_tok, out_tok = step_api_mapping(text)
+            # Flush Werkzeug's response buffer so the browser starts reading immediately
+            yield ": " + " " * 4096 + "\n\n"
+            yield f"data: {json.dumps({'step': 1, 'status': 'running', 'message': 'Calling Claude AI…'})}\n\n"
+            in_tok = out_tok = 0
+            for event, payload in step_api_mapping(text):
+                if event == "token":
+                    yield f"data: {json.dumps({'step': 1, 'status': 'token', 'chunk': payload})}\n\n"
+                else:
+                    in_tok, out_tok = payload
             yield f"data: {json.dumps({'step': 1, 'status': 'done', 'message': f'AI response received ({in_tok} input / {out_tok} output tokens)'})}\n\n"
 
             yield f"data: {json.dumps({'step': 2, 'status': 'running', 'message': 'Parsing markdown table → CSV…'})}\n\n"
