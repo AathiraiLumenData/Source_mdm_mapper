@@ -558,7 +558,15 @@ Example:
       const cb = document.getElementById('tabCsvBtn'), db = document.getElementById('tabDiagramBtn');
       if (isCsv) { cb.className = 'px-4 py-1.5 text-sm font-medium rounded-lg bg-blue-600 text-white transition-colors'; db.className = 'px-4 py-1.5 text-sm font-medium rounded-lg text-slate-500 hover:bg-slate-100 transition-colors'; }
       else       { db.className = 'px-4 py-1.5 text-sm font-medium rounded-lg bg-blue-600 text-white transition-colors'; cb.className = 'px-4 py-1.5 text-sm font-medium rounded-lg text-slate-500 hover:bg-slate-100 transition-colors'; }
-      if (!isCsv && !_currentXml.mapping) renderMappingDiagram();
+      if (!isCsv) {
+        if (!_currentXml.mapping) {
+          renderMappingDiagram();
+        } else {
+          document.getElementById('diagramLoading').classList.add('hidden');
+          document.getElementById('editMappingDiagramBtn').classList.remove('hidden');
+          renderDiagram('diagramContainer', _currentXml.mapping);
+        }
+      }
     }
 
     function renderMappingDiagram() {
@@ -569,9 +577,7 @@ Example:
         _currentXml.mapping = xml;
         document.getElementById('diagramLoading').classList.add('hidden');
         document.getElementById('editMappingDiagramBtn').classList.remove('hidden');
-        const c = document.getElementById('diagramContainer'); c.classList.remove('hidden'); c.classList.add('flex');
-        c.innerHTML = `<div class="mxgraph" style="width:100%;height:100%;" data-mxgraph="${escapeAttr(JSON.stringify({highlight:'#3b82f6',nav:true,resize:true,toolbar:'zoom layers lightbox',xml}))}"></div>`;
-        if (window.GraphViewer) window.GraphViewer.processElements();
+        renderDiagram('diagramContainer', xml);
       }).catch(err => {
         const msg = err.message === 'not_generated'
           ? 'Run the mapping pipeline first to generate a diagram.'
@@ -637,10 +643,7 @@ Example:
           _currentXml.mapping = data.xml;
           document.getElementById('diagramLoading').classList.add('hidden');
           document.getElementById('editMappingDiagramBtn').classList.remove('hidden');
-          const c = document.getElementById('diagramContainer');
-          c.classList.remove('hidden'); c.classList.add('flex');
-          c.innerHTML = `<div class="mxgraph" style="width:100%;height:100%;" data-mxgraph="${escapeAttr(JSON.stringify({highlight:'#3b82f6',nav:true,resize:true,toolbar:'zoom layers lightbox',xml:data.xml}))}"></div>`;
-          if (window.GraphViewer) window.GraphViewer.processElements();
+          renderDiagram('diagramContainer', data.xml);
         })
         .catch(() => {
           document.getElementById('diagramLoading').innerHTML = '<p class="text-sm text-slate-400">Could not generate demo diagram.</p>';
@@ -704,6 +707,22 @@ Example:
 
     function escapeAttr(s){return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
+    function renderDiagram(containerId, xml) {
+      const c = document.getElementById(containerId);
+      c.classList.remove('hidden');
+      if (containerId === 'diagramContainer') c.classList.add('flex');
+      c.innerHTML = '';
+      const div = document.createElement('div');
+      div.className = 'mxgraph';
+      div.style.cssText = 'width:100%;height:100%;';
+      div.setAttribute('data-mxgraph', JSON.stringify({
+        highlight:'#3b82f6', nav:true, resize:true,
+        toolbar:'zoom layers lightbox', compressed:false, xml
+      }));
+      c.appendChild(div);
+      setTimeout(() => { if (window.GraphViewer) GraphViewer.createViewerForElement(div); }, 50);
+    }
+
     // ════════════════════════════════════════════════════════════════════════
     // TOOL 2 — DIAGRAM BUILDER
     // ════════════════════════════════════════════════════════════════════════
@@ -758,10 +777,7 @@ Example:
           document.getElementById('dbEmptyState').classList.add('hidden');
           document.getElementById('dbFieldCount').textContent = `${data.fields} fields`;
           document.getElementById('editBuilderDiagramBtn').classList.remove('hidden');
-          const c = document.getElementById('dbDiagramContainer');
-          c.classList.remove('hidden');
-          c.innerHTML = `<div class="mxgraph" style="width:100%;height:100%;" data-mxgraph="${escapeAttr(JSON.stringify({highlight:'#3b82f6',nav:true,resize:true,toolbar:'zoom layers lightbox',xml:data.xml}))}"></div>`;
-          if (window.GraphViewer) window.GraphViewer.processElements();
+          renderDiagram('dbDiagramContainer', data.xml);
           document.getElementById('dbDownload').classList.remove('hidden');
         })
         .catch(err => { resetDbBtn(); showDbError(err.message); });
@@ -828,10 +844,7 @@ Example:
 
     function refreshDiagramViewer(tool, xml) {
       const containerId = tool === 'mapping' ? 'diagramContainer' : 'dbDiagramContainer';
-      const c = document.getElementById(containerId);
-      c.classList.remove('hidden');
-      c.innerHTML = `<div class="mxgraph" style="width:100%;height:100%;" data-mxgraph="${escapeAttr(JSON.stringify({highlight:'#3b82f6',nav:true,resize:true,toolbar:'zoom layers lightbox',xml}))}"></div>`;
-      if (window.GraphViewer) window.GraphViewer.processElements();
+      renderDiagram(containerId, xml);
     }
 
     function updateLineNumbers() {} // no-op, kept for compatibility
